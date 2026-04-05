@@ -55,30 +55,56 @@
 - [ ] Um refresh token deve ser utilizado apenas uma vez (rotação);
 - [ ] O usuário não pode se cadastrar com um e-mail já existente;
 - [ ] O usuário deve confirmar o e-mail cadastrado após o cadastro para que consiga se autenticar;
-- [ ] As contas cadastradas podem ser cadastradas pelo formulário de cadastro ou utilizando a OAuth 2.0 do Google;
-- [ ] O login pode ser realizado utilizando email e senha ou utilizando a OAuth 2.0 do Google;
-- [ ] Para recuperação de senha, o usuário receberá um código de 6 dígitos com validade de 10 minutos. Após 5 tentativas incorretas, o código será invalidado e o usuário deverá solicitar um novo.
+- [ ] As contas cadastradas podem ser cadastradas pelo formulário ou via OAuth 2.0 do Google;
+- [ ] O login pode ser realizado via email/senha ou OAuth 2.0 do Google;
+- [ ] Para recuperação de senha:
+  - [ ] O usuário receberá um código de 6 dígitos;
+  - [ ] O código terá validade de 15 minutos;
+  - [ ] Após 5 tentativas incorretas, o código será invalidado;
 - [ ] Um usuário não pode seguir a si mesmo;
 - [ ] O usuário só pode editar ou excluir posts feitos por ele;
 - [ ] O usuário só pode editar ou excluir comentários feitos por ele;
 - [ ] Um usuário não pode curtir o mesmo post mais de uma vez;
-- [ ] Um usuário não pode comentar ou curtir em um post inexistente;
-- [ ] Um usuário não pode responder ou curtir um comentário inexistente;
+- [ ]  Um usuário não pode interagir com recursos inexistentes:
+  - [ ] Curtir/comentar post inexistente;
+  - [ ] Responder/curtir comentário inexistente;
 - [ ] Um post deve estar associado a um usuário válido;
-- [ ] Um comentário deve estar associado a um usuário válido;
+- [ ]  Um comentário deve estar associado a:
+  - [ ] Um usuário válido;
+  - [ ] Um post válido;
+- [ ] Um comentário não pode ser criado em um post removido (deleted_at IS NOT NULL);
 - [ ] Um post não pode ser criado sem conteúdo;
+- [ ] Um post só deve ser visível quando:
+  - [ ] deleted_at IS NULL
+  - [ ] o usuário proprietário estiver com status ACTIVE;
+- [ ] Um post pode possuir uma ou mais imagens associadas:
+  - [ ] Cada imagem pertence a um único post;
+  - [ ] Máximo de 10 imagens por post;
+  - [ ] A ordem das imagens deve ser única e sequencial;
+- [ ] Regras de imagens:
+  - [ ] Devem estar associadas a um post válido;
+  - [ ] Não podem ser associadas a posts removidos;
+  - [ ]Ao remover um post (soft delete), suas imagens tornam-se indisponíveis;
 - [ ] Um comentário não pode ser criado sem conteúdo;
 - [ ] Um comentário pode opcionalmente referenciar outro comentário como pai;
 - [ ] Um comentário pai deve pertencer ao mesmo post;
 - [ ] Os posts do Feed global e Feed seguindo devem ser retornados ordenados por data de publicação;
-- [ ] Uma sessão é considerada revogada quando o usuário realiza logout ou quando o sistema invalida manualmente a sessão;
-- [ ] Uma sessão é considerada expirada quando ultrapassa sua data de expiração definida;
-- [ ] Uma sessão é considerada inativa quando não há uso por um período superior a 7 dias;
+- [ ] Sessões:
+  - [ ] Revogada → logout ou invalidação manual;
+  - [ ] Expirada → passou do expires_at;
+  - [ ] Inativa → sem uso por mais de 7 dias;
 - [ ] Usuários, posts e comentários devem ser excluídos utilizando a estratégia de soft delete, através do preenchimento de um campo de data de exclusão (deleted_at), sem remoção física dos dados;
 - [ ] Um usuário com conta pausada pode reativar sua conta utilizando suas credenciais anteriores;
 - [ ] Usuários com conta pausada não podem se autenticar enquanto a conta não for reativada por meio de um link de reativação enviado ao e-mail cadastrado;
-- [ ] Ao pausar uma conta, todos os conteúdos gerados pelo usuário (posts e comentários (caso um comentário seja pai, seus comentários filhos também devem ser ocultados)) devem ter sua visibilidade suspensa imediatamente;
-- [ ] Se o usuário pausar sua conta ou tiver a conta revogada, todas as suas sessões serão revogas imediatamente;
+- [ ] Ao tentar autenticar com conta pausada:
+  - [ ] O acesso deve ser negado;
+  - [ ] Um novo token de reativação deve ser gerado;
+  - [ ] Um e-mail de reativação deve ser enviado automaticamente;
+- [ ] Se o usuário pausar sua conta ou tiver a conta revogada, todos os conteúdos gerados pelo usuário (posts e comentários (caso um comentário seja pai, seus comentários filhos também devem ser ocultados)) devem ter sua visibilidade suspensa imediatamente;
+- [ ] Se o usuário pausar sua conta ou tiver a conta revogada, todas as suas sessões serão revogadas imediatamente;
+- [ ] Tokens não devem ser reutilizáveis, mesmo em cenários de concorrência (race condition);
+- [ ] Todos os tokens (recuperação de senha, validação de e-mail e reativação de conta) devem expirar em 15 minutos;
+- [ ]  Um token não pode ser utilizado se já estiver expirado ou já tiver sido utilizado (used_at preenchido);
 
 ## RNFs (Requisitos Não Funcionais)
 - [ ] Autenticação deve utilizar JWT (15 minutos) com refresh token (30 dias);
@@ -94,14 +120,16 @@
 - [ ] A API deve ter tempo de resposta inferior a 500ms;
 - [ ] Sessões revogadas, expiradas e inativas devem ser removidas automaticamente a cada 1 hora;
 - [ ] A remoção de sessões deve ser realizada por processo assíncrono (job/worker);
-- [ ] Todos os tokens para recuperação de senha, validação do email e reativação da conta devem ser expirados em 15 minutos e serem de uso único;
 - [ ] Proibido salvar binários no banco;
-- [ ] Converter uploads de imagem para WebP, redimensionando conforme o tipo de conteúdo e limitando o arquivo original a 5MB;
+- [ ] Imagens:
+  - [ ] Converter para WebP;
+  - [ ] Limite de 5MB;
+  - [ ] Redimensionamento conforme contexto;
 - [ ] Servir as imagens via CDN para garantir baixa latência e redução de carga no servidor principal.
 
 ## Banco de dados
 
-## 🧑‍💻 Users
+### 🧑‍💻 Users
 
 ```sql
 users:
@@ -124,7 +152,7 @@ users:
 
 ---
 
-## 🔗 User Providers (OAuth)
+### 🔗 User Providers (OAuth)
 
 ```sql
 user_providers:
@@ -150,7 +178,7 @@ ON user_providers(user_id);
 
 ---
 
-## 🔐 Sessions
+### 🔐 Sessions
 
 ```sql
 sessions:
@@ -193,13 +221,15 @@ WHERE revoked_at IS NULL;
 
 ### Regras
 
-* Sessões são consideradas ativas quando `revoked_at IS NULL`.
+* Sessões são consideradas ativas quando:
+  - revoked_at IS NULL
+  - expires_at > now()
 * Sessões devem ser removidas quando expiradas ou inativas.
 * O campo `last_used_at` deve ser atualizado de forma preguiçosa para evitar sobrecarga no banco.
 
 ---
 
-## 🎟️ User Tokens
+### 🎟️ User Tokens
 
 ```sql
 user_tokens:
@@ -231,7 +261,6 @@ ON user_tokens(expires_at)
 WHERE used_at IS NULL;
 ```
 
-
 #### Limpeza de tokens já usados
 
 ```sql
@@ -247,8 +276,83 @@ WHERE used_at IS NOT NULL;
 * O campo `attempts` controla tentativas de uso:
   * Após 5 tentativas inválidas, o token deve ser automaticamente invalidado.
 * As operações dependem do status do usuário:
-
   * `ACTIVE` → recuperação de senha
   * `PENDING` → verificação de email
   * `PAUSED` → reativação de conta
   * `REVOKED` → nenhuma operação permitida
+
+---
+
+### 📝 Posts
+
+```sql
+posts:
+- id: uuid (PK)
+- user_id: uuid (FK → users.id)
+- description: text (nullable)
+- created_at: timestamptz
+- updated_at: timestamptz
+- deleted_at: timestamptz (nullable)
+```
+
+### 📊 Índices
+
+#### Feed seguindo (posts de usuários seguidos)
+
+```sql
+CREATE INDEX idx_posts_user_id_created_at
+ON posts(user_id, created_at DESC)
+WHERE deleted_at IS NULL;
+```
+
+#### Feed global (posts recentes)
+
+```sql
+CREATE INDEX idx_posts_created_at
+ON posts(created_at DESC)
+WHERE deleted_at IS NULL;
+```
+
+---
+
+### 📌 Regras
+
+* Posts com `deleted_at` preenchido são considerados removidos (soft delete).
+* O feed deve considerar apenas posts onde `deleted_at IS NULL`.
+* Os posts do **Feed Global** devem ser ordenados por data de criação (`created_at DESC`).
+* Os posts do **Feed Seguindo** devem ser filtrados por `user_id` e ordenados por data de criação.
+* Ao pausar ou revogar a conta de um usuário, seus posts devem ser **ocultados com base no status da conta**, sem alteração do campo `deleted_at`.
+* Um post só deve ser visível quando:
+  - deleted_at IS NULL
+  - o usuário proprietário estiver com status ACTIVE;
+
+---
+
+### 🖼️ Images
+
+```sql
+images:
+- id: uuid (PK)
+- post_id: uuid (FK → posts.id)
+- url: varchar(255)
+- order_in_post: int
+- created_at: timestamptz
+
+UNIQUE (post_id, order_in_post)
+```
+
+### 📊 Índices
+
+#### Imagens por post (ordenadas)
+
+```sql
+CREATE INDEX idx_images_post_id_order
+ON images(post_id, order_in_post);
+```
+
+### 📌 Regras
+
+* Um post pode possuir múltiplas imagens associadas.
+* As imagens devem ser recuperadas ordenadas pelo campo `order_in_post`.
+* Cada imagem deve estar obrigatoriamente associada a um post válido.
+* A exclusão de um post (soft delete) implica na **indisponibilidade lógica** das imagens associadas.
