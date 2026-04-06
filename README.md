@@ -88,6 +88,11 @@
 - [ ] Um comentário não pode ser criado sem conteúdo;
 - [ ] Um comentário pode opcionalmente referenciar outro comentário como pai;
 - [ ] Um comentário pai deve pertencer ao mesmo post;
+- [ ] Um comentário não pode ser pai dele mesmos;
+- [ ] Um comentário pode possuir no máximo 2 níveis:
+  - Comentário raiz (parent_id = NULL)
+  - Resposta (parent_id != NULL)
+- [ ] Um comentário não pode responder outro comentário que já seja uma resposta;
 - [ ] Os posts do Feed global e Feed seguindo devem ser retornados ordenados por data de publicação;
 - [ ] Sessões:
   - [ ] Revogada → logout ou invalidação manual;
@@ -356,3 +361,131 @@ ON images(post_id, order_in_post);
 * As imagens devem ser recuperadas ordenadas pelo campo `order_in_post`.
 * Cada imagem deve estar obrigatoriamente associada a um post válido.
 * A exclusão de um post (soft delete) implica na **indisponibilidade lógica** das imagens associadas.
+
+---
+
+### 💬 Comments
+
+```sql
+comments:
+- id: uuid (PK)
+- user_id: uuid (FK → users.id)
+- post_id: uuid (FK → posts.id)
+- parent_id: uuid (FK → comments.id) (nullable)
+- content: text
+- created_at: timestamptz
+- updated_at: timestamptz
+- deleted_at: timestamptz (nullable)
+
+CHECK (parent_id IS NULL OR parent_id <> id)
+CHECK (length(trim(content)) > 0)
+```
+
+### 📊 Índices
+
+#### Carregar todos os comentários de um post de uma vez só, já organizados
+```sql
+CREATE INDEX idx_comments_post_full
+ON comments(post_id, parent_id, created_at)
+WHERE deleted_at IS NULL;
+```
+
+#### Comentários por usuário
+
+```sql
+CREATE INDEX idx_comments_user_id
+ON comments(user_id)
+WHERE deleted_at IS NULL;
+```
+
+#### Comentários principais do post (nível raiz)
+
+```sql
+CREATE INDEX idx_comments_post_id 
+ON comments(post_id, created_at ASC) 
+WHERE deleted_at IS NULL AND parent_id IS NULL;
+```
+
+#### Respostas de um comentário
+
+```sql
+CREATE INDEX idx_comments_parent_id 
+ON comments(parent_id, created_at ASC)
+WHERE parent_id IS NOT NULL AND deleted_at IS NULL;
+```
+
+### Trigger
+
+* ✔ Validar post;
+* ✔ Comentário não pode ser pai dele mesmo;
+* ✔ Limite de profundidade (2 níveis);
+* ✔ Mesmo post;
+* ✔ Não responder comentário deletado.
+
+```sql
+CREATE OR REPLACE FUNCTION check_comment_integrity()
+RETURNS TRIGGER AS $$
+DECLARE
+  parent_record comments%ROWTYPE;
+  is_post_deleted boolean;
+BEGIN
+  -- 1. Validar se o Post está ativo (Soft Delete Check)
+  -- A existência do ID a FK já garante.
+  SELECT (deleted_at IS NOT NULL) INTO is_post_deleted FROM posts WHERE id = NEW.post_id;
+  
+  IF is_post_deleted THEN
+    RAISE EXCEPTION 'Não é possível comentar em post removido';
+  END IF;
+
+  -- 2. Se for uma resposta
+  IF NEW.parent_id IS NOT NULL THEN
+    -- Busca dados do pai para validar regras de negócio
+    SELECT * INTO parent_record FROM comments WHERE id = NEW.parent_id;
+
+    -- RN: Mesmo post
+    IF parent_record.post_id <> NEW.post_id THEN
+      RAISE EXCEPTION 'Comentário pai deve pertencer ao mesmo post';
+    END IF;
+
+    -- RN: Não responder comentário com soft delete
+    IF parent_record.deleted_at IS NOT NULL THEN
+      RAISE EXCEPTION 'Não é possível responder um comentário removido';
+    END IF;
+
+    -- RN: Limite de profundidade (Máximo 2 níveis)
+    IF parent_record.parent_id IS NOT NULL THEN
+      RAISE EXCEPTION 'Não é permitido responder uma resposta (máx 2 níveis)';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+#### 🔗 Agora conecta a trigger
+```sql
+CREATE TRIGGER trg_comments_before_ins_upd_check_integrity
+BEFORE INSERT OR UPDATE ON comments
+FOR EACH ROW
+EXECUTE FUNCTION check_comment_integrity();
+```
+
+### 📌 Regras
+* Um comentário não pode ser criado em um post removido (`deleted_at IS NOT NULL`);
+* Um comentário pode opcionalmente referenciar outro comentário (`parent_id`);
+* Um comentário filho:
+  * Deve pertencer ao mesmo `post_id` do comentário pai;
+  * Deve possuir um `parent_id` válido;
+* Um comentário pode possuir no máximo 2 níveis:
+  * Comentário raiz (parent_id = NULL)
+  * Resposta (parent_id != NULL)
+* Um comentário não pode responder outro comentário que já seja uma resposta;
+* Um comentário só deve ser visível quando:
+  * `deleted_at IS NULL`;
+  * O usuário proprietário estiver com status `ACTIVE`;
+  * O post associado não estiver removido (`deleted_at IS NULL`);
+* Ao pausar ou revogar a conta:
+  * Os comentários do usuário devem ser **ocultados com base no status**, sem alterar `deleted_at`;
+* Ao remover um comentário (soft delete):
+  * Seus comentários filhos devem ter a visibilidade **ocultada logicamente**;
