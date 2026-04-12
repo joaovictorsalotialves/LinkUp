@@ -318,8 +318,6 @@ ON posts(created_at DESC)
 WHERE deleted_at IS NULL;
 ```
 
----
-
 ### 📌 Regras
 
 * Posts com `deleted_at` preenchido são considerados removidos (soft delete).
@@ -489,3 +487,178 @@ EXECUTE FUNCTION check_comment_integrity();
   * Os comentários do usuário devem ser **ocultados com base no status**, sem alterar `deleted_at`;
 * Ao remover um comentário (soft delete):
   * Seus comentários filhos devem ter a visibilidade **ocultada logicamente**;
+
+## 💬 Comment Likes
+
+```sql
+comment_likes:
+- comment_id: uuid (FK → comments.id)
+- user_id: uuid (FK → users.id)
+- liked_at: timestamptz
+
+PRIMARY KEY (comment_id, user_id)
+```
+
+### 📊 Índices
+
+#### Likes por comentário
+
+```sql
+CREATE INDEX idx_comment_likes_comment_id
+ON comment_likes(comment_id);
+```
+
+#### Likes por usuário
+
+```sql
+CREATE INDEX idx_comment_likes_user_id
+ON comment_likes(user_id);
+```
+
+### 📌 Regras
+
+* A **primary key composta** (`comment_id`, `user_id`) garante que:
+  * Um usuário só pode curtir um comentário **uma única vez**;
+
+### Trigger
+
+```sql 
+CREATE OR REPLACE FUNCTION check_comment_like_integrity()
+RETURNS TRIGGER AS $$
+DECLARE
+  comment_record comments%ROWTYPE;
+  user_status users.status%TYPE;
+BEGIN
+  -- 1. Busca o comentário
+  SELECT *
+  INTO comment_record
+  FROM comments
+  WHERE id = NEW.comment_id;
+
+  -- 2. Deve existir
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Comentário não encontrado';
+  END IF;
+
+  -- 3. Não pode estar deletado
+  IF comment_record.deleted_at IS NOT NULL THEN
+    RAISE EXCEPTION 'Não é possível curtir comentário removido';
+  END IF;
+
+  -- 4. Busca status do dono do comentário
+  SELECT status
+  INTO user_status
+  FROM users
+  WHERE id = comment_record.user_id;
+
+  -- 5. Usuário precisa estar ativo
+  IF user_status <> 'ACTIVE' THEN
+    RAISE EXCEPTION 'Não é possível curtir comentário de usuário inativo';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+#### 🔗 Agora conecta a trigger
+
+```sql 
+CREATE TRIGGER trg_check_comment_like_integrity
+BEFORE INSERT ON comment_likes
+FOR EACH ROW
+EXECUTE FUNCTION check_comment_like_integrity();
+```
+
+## 📝 Post Likes
+
+```sql
+post_likes:
+- post_id: uuid (FK → posts.id)
+- user_id: uuid (FK → users.id)
+- liked_at: timestamptz
+
+PRIMARY KEY (post_id, user_id)
+```
+
+### 📊 Índices
+
+#### Likes por post
+
+```sql
+CREATE INDEX idx_post_likes_post_id
+ON post_likes(post_id);
+```
+
+#### Likes por usuário
+
+```sql
+CREATE INDEX idx_post_likes_user_id
+ON post_likes(user_id);
+```
+
+### 📌 Regras
+
+* A **primary key composta** (`post_id`, `user_id`) garante:
+  * Um usuário não pode curtir o mesmo post mais de uma vez;
+
+### Trigger
+
+```sql 
+CREATE OR REPLACE FUNCTION check_post_like_integrity()
+RETURNS TRIGGER AS $$
+DECLARE
+  post_record posts%ROWTYPE;
+  user_status users.status%TYPE;
+BEGIN
+  -- 1. Busca o post
+  SELECT *
+  INTO post_record
+  FROM posts
+  WHERE id = NEW.post_id;
+
+  -- 2. Deve existir
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Post não encontrado';
+  END IF;
+
+  -- 3. Não pode estar deletado
+  IF post_record.deleted_at IS NOT NULL THEN
+    RAISE EXCEPTION 'Não é possível curtir post removido';
+  END IF;
+
+  -- 4. Busca status do dono do post
+  SELECT status
+  INTO user_status
+  FROM users
+  WHERE id = post_record.user_id;
+
+  -- 5. Usuário precisa estar ativo
+  IF user_status <> 'ACTIVE' THEN
+    RAISE EXCEPTION 'Não é possível curtir post de usuário inativo';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+```
+#### 🔗 Agora conecta a trigger
+
+```sql
+CREATE TRIGGER trg_check_post_like_integrity
+BEFORE INSERT ON post_likes
+FOR EACH ROW
+EXECUTE FUNCTION check_post_like_integrity();
+```
+
+### 🔒 Regras de Integridade (Banco de Dados)
+
+* Não é permitido:
+  * Curtir posts ou comentários inexistentes;
+  * Curtir conteúdos removidos (`deleted_at IS NOT NULL`);
+  * Curtir conteúdos de usuários com status diferente de `ACTIVE`.
+
+### 🧠 Estratégia de Soft Delete
+
+* Likes **não são removidos** quando um post ou comentário é deletado.
+* A consistência é garantida via **filtros nas queries** (`JOIN` com conteúdo ativo).
