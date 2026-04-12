@@ -662,3 +662,89 @@ EXECUTE FUNCTION check_post_like_integrity();
 
 * Likes **não são removidos** quando um post ou comentário é deletado.
 * A consistência é garantida via **filtros nas queries** (`JOIN` com conteúdo ativo).
+
+
+## 🔗 Follows
+
+```sql
+follows:
+- follower_id: uuid (FK → users.id)
+- following_id: uuid (FK → users.id)
+- followed_at: timestamptz
+
+PRIMARY KEY (follower_id, following_id)
+CHECK (follower_id <> following_id)
+```
+
+### 📊 Índices
+
+#### Busca de seguidores (quem segue um usuário)
+
+```sql
+CREATE INDEX idx_follows_following_follower
+ON follows(following_id, follower_id);
+```
+
+#### Busca de quem o usuário segue
+
+```sql
+CREATE INDEX idx_follows_follower_id
+ON follows(follower_id);
+```
+
+#### Busca direta por usuários seguidos
+
+```sql
+CREATE INDEX idx_follows_following_id
+ON follows(following_id);
+```
+
+### 📌 Regras
+
+* A **primary key composta** (`follower_id`, `following_id`) garante que:
+  * Um usuário só pode seguir outro **uma única vez**;
+  * Não exista duplicidade de relacionamento;
+
+* Um usuário **não pode seguir a si mesmo**:
+  * Garantido via `CHECK (follower_id <> following_id)`;
+
+### Trigger
+
+* Não permitir usuário que segue está com a conta pausado ou revogada;
+* Não permitir usuário seguido com conta pausada ou revogada;
+
+```sql
+CREATE OR REPLACE FUNCTION check_follow_integrity()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Usuário que segue precisa estar ativo
+  IF EXISTS (
+    SELECT 1 FROM users
+    WHERE id = NEW.follower_id
+      AND status <> 'ACTIVE'
+  ) THEN
+    RAISE EXCEPTION 'Usuário não pode seguir outros';
+  END IF;
+
+  -- Usuário seguido precisa estar ativo
+  IF EXISTS (
+    SELECT 1 FROM users
+    WHERE id = NEW.following_id
+      AND status <> 'ACTIVE'
+  ) THEN
+    RAISE EXCEPTION 'Não é possível seguir usuário inativo';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+#### 🔗 Agora conecta a trigger
+
+```sql
+CREATE TRIGGER trg_check_follow_integrity
+BEFORE INSERT ON follows
+FOR EACH ROW
+EXECUTE FUNCTION check_follow_integrity();
+```
