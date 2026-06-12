@@ -1158,3 +1158,14 @@ BEFORE DELETE ON comments
 FOR EACH ROW
 EXECUTE FUNCTION prevent_delete();
 ```
+
+## Estrutura de Pastas
+
+src
+|-core
+|
+|-domain
+|
+|-infra
+|
+|-main
