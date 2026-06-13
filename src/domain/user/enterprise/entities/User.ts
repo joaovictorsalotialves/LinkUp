@@ -1,7 +1,7 @@
-import { Entity } from '../../../../core/entities/Entity'
-import type { UniqueEntityID } from '../../../../core/entities/value-objects/UniqueEntityID'
-import type { StatusUser } from '../../../../core/types/StatusUser'
-import type { Optional } from '../../../../core/utils/optional'
+import { Entity } from '@/core/entities/Entity'
+import type { UniqueEntityID } from '@/core/entities/value-objects/UniqueEntityID'
+import type { StatusUser } from '@/core/types/StatusUser'
+import type { Optional } from '@/core/utils/optional'
 
 type UserProps = {
   username: string

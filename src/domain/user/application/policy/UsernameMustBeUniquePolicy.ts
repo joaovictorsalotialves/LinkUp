@@ -1,3 +1,4 @@
+import { ResourceAlreadyExists } from '@/core/errors/ResourceAlreadyExists'
 import type { UserRepository } from '../repositories/UserRepository'
 
 export class UsernameMustBeUniquePolicy {
@@ -7,7 +8,7 @@ export class UsernameMustBeUniquePolicy {
     const user = await this.userRepository.findByUsername(username)
 
     if (user) {
-      throw new Error('User with this username already exists')
+      throw new ResourceAlreadyExists('User with this username already exists')
     }
   }
 }

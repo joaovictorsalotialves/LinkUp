@@ -7,7 +7,12 @@
     "esModuleInterop": true,
     "strict": true,
     "emitDecoratorMetadata": true,
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/core/*": ["./src/core/*"],
+      "@/domain/*": ["./src/domain/*"],
+    }
   },
   "include": ["./src/**/*"]
 }

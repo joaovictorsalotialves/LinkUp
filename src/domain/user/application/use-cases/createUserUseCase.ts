@@ -1,4 +1,5 @@
-import type { HashProvider } from '../../../../core/provider/HashProvider'
+import { InternalServerError } from '@/core/errors/InternalServerError'
+import type { HashProvider } from '@/core/provider/HashProvider'
 import { User } from '../../enterprise/entities/User'
 import type { UserEmailMustBeUniquePolicy } from '../policy/UserEmailMustBeUniquePolicy'
 import type { UsernameMustBeUniquePolicy } from '../policy/UsernameMustBeUniquePolicy'
@@ -35,9 +36,8 @@ export class CreateUserUseCase {
       await this.userRepository.create(user)
 
       return { user }
-    } catch (error) {
-      console.error('Error creating user:', error)
-      throw new Error('Failed to create user')
+    } catch {
+      throw new InternalServerError('Failed to create user')
     }
   }
 }
