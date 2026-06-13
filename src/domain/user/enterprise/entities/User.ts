@@ -1,16 +1,12 @@
 import { Entity } from '../../../../core/entities/Entity'
-import type { HttpUrl } from '../../../../core/entities/value-objects/HttpUrl'
 import type { UniqueEntityID } from '../../../../core/entities/value-objects/UniqueEntityID'
 import type { StatusUser } from '../../../../core/types/StatusUser'
-import type { Email } from '../value-objects/Email'
-import type { PasswordHash } from '../value-objects/Password'
-import type { Username } from '../value-objects/Username'
 
 type UserProps = {
-  username: Username
-  email: Email
-  password: PasswordHash
-  profilePhotoUrl?: HttpUrl
+  username: string
+  email: string
+  password: string
+  profilePhotoUrl?: string
   bio?: string
   status: StatusUser
   createdAt: Date
