@@ -1,5 +1,7 @@
 import type { HashProvider } from '../../../../core/provider/HashProvider'
 import { User } from '../../enterprise/entities/User'
+import type { UserEmailMustBeUniquePolicy } from '../policy/UserEmailMustBeUniquePolicy'
+import type { UsernameMustBeUniquePolicy } from '../policy/UsernameMustBeUniquePolicy'
 import type { UserRepository } from '../repositories/UserRepository'
 
 type CreateUserRequest = {
@@ -17,22 +19,15 @@ type CreateUserResponse = {
 export class CreateUserUseCase {
   constructor(
     private readonly userRepository: UserRepository,
-    private readonly hashProvider: HashProvider
+    private readonly hashProvider: HashProvider,
+    private readonly usernameMustBeUniquePolicy: UsernameMustBeUniquePolicy,
+    private readonly userEmailMustBeUniquePolicy: UserEmailMustBeUniquePolicy
   ) {}
 
   async execute({ username, email, password, profilePhotoUrl, bio }: CreateUserRequest): Promise<CreateUserResponse> {
     try {
-      const existingUserRegisterWithSameEmail = await this.userRepository.findByEmail(email)
-
-      if (existingUserRegisterWithSameEmail) {
-        throw new Error('User with this email already exists')
-      }
-
-      const existingUserRegisterWithSameUsername = await this.userRepository.findByUsername(username)
-
-      if (existingUserRegisterWithSameUsername) {
-        throw new Error('User with this username already exists')
-      }
+      await this.usernameMustBeUniquePolicy.validate(username)
+      await this.userEmailMustBeUniquePolicy.validate(email)
 
       const passwordHash = await this.hashProvider.hash(password)
 
