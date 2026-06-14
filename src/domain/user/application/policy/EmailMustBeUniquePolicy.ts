@@ -1,7 +1,7 @@
 import { ResourceAlreadyExists } from '@/core/errors/ResourceAlreadyExists'
 import type { UserRepository } from '../repositories/UserRepository'
 
-export class UserEmailMustBeUniquePolicy {
+export class EmailMustBeUniquePolicy {
   constructor(private readonly userRepository: UserRepository) {}
 
   async validate(email: string): Promise<void> {

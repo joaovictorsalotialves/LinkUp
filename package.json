@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node --env-file .env --experimental-strip-types --no-warnings src/main/server.ts",
-    "dev": "node --env-file .env --experimental-strip-types --no-warnings --watch src/main/server.ts"
+    "dev": "tsx watch src/main/server.ts"
   },
   "repository": {
     "type": "git",
@@ -21,16 +20,20 @@
   "homepage": "https://github.com/joaovictorsalotialves/LinkUp#readme",
   "devDependencies": {
     "@biomejs/biome": "^2.5.0",
+    "@types/bcrypt": "^6.0.0",
+    "@types/express": "^5.0.6",
     "@types/node": "^25.9.3",
     "drizzle-kit": "^0.31.10",
-    "typescript": "^6.0.3",
-    "@types/express": "^5.0.6"
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
-    "expresses": "^1.1.2",
+    "express": "^5.2.1",
+    "pg": "^8.21.0",
     "postgres": "^3.4.9",
-    "tsc-watch": "^7.2.0",
     "zod": "^4.4.3"
   }
 }

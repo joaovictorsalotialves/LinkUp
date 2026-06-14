@@ -26,7 +26,9 @@ export class CreateUserController {
       })
 
       return response.status(201).send()
+      // biome-ignore lint/suspicious/noExplicitAny: Error
     } catch (error: any) {
+      console.error('Error creating user:', error)
       throw new ServerError(error)
     }
   }

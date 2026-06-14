@@ -1,8 +1,17 @@
 import { randomUUID } from 'node:crypto'
-import { ValueObject } from './ValueObjects'
 
-export class UniqueEntityID extends ValueObject<UniqueEntityID> {
+export class UniqueEntityID {
+  private _value: string
+
+  get value() {
+    return this._value
+  }
+
   constructor(value?: string) {
-    super(new UniqueEntityID(value ?? randomUUID()))
+    this._value = value ?? randomUUID()
+  }
+
+  public equals(outher: UniqueEntityID) {
+    return outher.value === this.value
   }
 }

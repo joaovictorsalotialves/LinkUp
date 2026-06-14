@@ -15,6 +15,38 @@ type UserProps = {
 }
 
 export class User extends Entity<UserProps> {
+  get username(): string {
+    return this.props.username
+  }
+
+  get email(): string {
+    return this.props.email
+  }
+
+  get passwordHash(): string {
+    return this.props.passwordHash
+  }
+
+  get profilePhotoUrl(): string | undefined {
+    return this.props.profilePhotoUrl
+  }
+
+  get bio(): string | undefined {
+    return this.props.bio
+  }
+
+  get status(): StatusUser {
+    return this.props.status
+  }
+
+  get createdAt(): Date {
+    return this.props.createdAt
+  }
+
+  get updatedAt(): Date {
+    return this.props.updatedAt
+  }
+
   static create(props: Optional<UserProps, 'status' | 'createdAt' | 'updatedAt'>, id?: UniqueEntityID) {
     const user = new User(
       {
