@@ -8,14 +8,20 @@ export class InMemoryUsersRepository implements UserRepository {
     this.items.push(user)
   }
 
+  async findById(id: string): Promise<User | null> {
+    const [user] = this.items.filter(item => item.id.value === id)
+
+    return user ?? null
+  }
+
   async findByEmail(email: string): Promise<User | null> {
-    const [user] = this.items.filter(item => item.email.toString() === email)
+    const [user] = this.items.filter(item => item.email === email)
 
     return user ?? null
   }
 
   async findByUsername(username: string): Promise<User | null> {
-    const [user] = this.items.filter(item => item.username.toString() === username)
+    const [user] = this.items.filter(item => item.username === username)
 
     return user ?? null
   }

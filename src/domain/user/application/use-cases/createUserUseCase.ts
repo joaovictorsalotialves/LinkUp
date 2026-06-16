@@ -1,11 +1,12 @@
 import { InternalServerError } from '@/core/errors/InternalServerError'
+import { ResourceAlreadyExists } from '@/core/errors/ResourceAlreadyExists'
 import type { HashProvider } from '@/core/provider/HashProvider'
 import { User } from '../../enterprise/entities/User'
 import type { EmailMustBeUniquePolicy } from '../policy/EmailMustBeUniquePolicy'
 import type { UsernameMustBeUniquePolicy } from '../policy/UsernameMustBeUniquePolicy'
 import type { UserRepository } from '../repositories/UserRepository'
 
-type CreateUserRequest = {
+export type CreateUserRequest = {
   username: string
   email: string
   password: string
@@ -37,7 +38,10 @@ export class CreateUserUseCase {
 
       return { user }
     } catch (error) {
-      console.error('Error creating user:', error)
+      if (error instanceof ResourceAlreadyExists) {
+        throw error
+      }
+
       throw new InternalServerError('Failed to create user')
     }
   }
