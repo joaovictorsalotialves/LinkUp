@@ -3,7 +3,7 @@ import type { UniqueEntityID } from '@/core/entities/value-objects/UniqueEntityI
 import type { StatusUser } from '@/core/types/StatusUser'
 import type { Optional } from '@/core/utils/optional'
 
-type UserProps = {
+export type UserProps = {
   username: string
   email: string
   passwordHash: string

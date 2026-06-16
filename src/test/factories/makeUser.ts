@@ -1,9 +1,26 @@
-import { User } from '@/domain/user/enterprise/entities/User'
+import type { UniqueEntityID } from '@/core/entities/value-objects/UniqueEntityID'
+import type { Optional } from '@/core/utils/optional'
+import { User, type UserProps } from '@/domain/user/enterprise/entities/User'
 
-export const makeUser = (): User => {
-  return User.create({
+export const makeUser = (
+  user: Optional<UserProps, keyof UserProps> = {
     username: 'JohnDoe',
     email: 'john@example.com',
-    passwordHash: '123456',
-  })
+    passwordHash: 'hash_password',
+  },
+  id?: UniqueEntityID
+): User => {
+  return User.create(
+    {
+      username: user.username as string,
+      email: user.email as string,
+      passwordHash: user.passwordHash as string,
+      bio: user.bio,
+      profilePhotoUrl: user.profilePhotoUrl,
+      status: user.status,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    },
+    id
+  )
 }
