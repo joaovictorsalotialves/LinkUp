@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx watch src/main/server.ts"
+    "dev": "tsx watch src/main/server.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "repository": {
     "type": "git",
@@ -25,7 +27,9 @@
     "@types/node": "^25.9.3",
     "drizzle-kit": "^0.31.10",
     "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.9"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
