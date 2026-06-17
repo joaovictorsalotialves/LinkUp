@@ -1,17 +1,8 @@
 import { UniqueEntityID } from '@/core/entities/value-objects/UniqueEntityID'
 import { User } from '@/domain/user/enterprise/entities/User'
+import type { userDB } from '../@types/userDB'
 
-export const userMapper = (user: {
-  id: string
-  username: string
-  email: string
-  passwordHash: string
-  profilePhotoUrl: string | null
-  bio: string | null
-  status: 'pending' | 'active' | 'inactive' | 'revoked'
-  createdAt: Date
-  updatedAt: Date
-}): User => {
+export const userMapper = (user: userDB): User => {
   return User.create(
     {
       username: user.username,

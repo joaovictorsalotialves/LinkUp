@@ -34,7 +34,7 @@ export class CreateUserUseCase {
       const passwordHash = await this.hashProvider.hash(password)
 
       const user = User.create({ username, email, passwordHash, profilePhotoUrl, bio })
-      await this.userRepository.save(user)
+      await this.userRepository.create(user)
 
       return { user }
     } catch (error) {

@@ -22,8 +22,10 @@ describe('User', () => {
       bio: 'My bio',
     })
 
-    expect(user.profilePhotoUrl).toBe('photo.jpg')
-    expect(user.bio).toBe('My bio')
+    expect(user).contain({
+      profilePhotoUrl: 'photo.jpg',
+      bio: 'My bio',
+    })
   })
 
   it('should use provided status', () => {

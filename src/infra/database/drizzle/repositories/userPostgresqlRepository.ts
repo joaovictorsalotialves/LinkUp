@@ -6,7 +6,7 @@ import { userMapper } from '../mapper/userMapper'
 import { schemas } from '../schemas'
 
 export class UserPostgresqlRepository implements UserRepository {
-  async save(user: User): Promise<void> {
+  async create(user: User): Promise<void> {
     await db.insert(schemas.users).values({
       id: user.id.value,
       username: user.username,

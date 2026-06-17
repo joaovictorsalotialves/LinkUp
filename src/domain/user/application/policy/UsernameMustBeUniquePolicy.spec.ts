@@ -17,7 +17,7 @@ describe('UsernameMustBeUniquePolicy', () => {
   })
 
   it('should throw ResourceAlreadyExists when username already exists', async () => {
-    await inMemoryUsersRepository.save(makeUser())
+    await inMemoryUsersRepository.create(makeUser())
 
     await expect(sut.validate('JohnDoe')).rejects.toBeInstanceOf(ResourceAlreadyExists)
   })

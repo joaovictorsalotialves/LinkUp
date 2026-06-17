@@ -12,19 +12,13 @@ let hashFakeProvider: HashProvider
 let usernameMustBeUniquePolicy: UsernameMustBeUniquePolicy
 let emailMustBeUniquePolicy: EmailMustBeUniquePolicy
 
-const makeCreateUserRequest = (
-  createUserRequest: CreateUserRequest = {
-    username: 'JohnDoe',
-    email: 'john@example.com',
-    password: 'password',
-  }
-): CreateUserRequest => {
+const makeCreateUserRequest = (createUserRequest?: CreateUserRequest): CreateUserRequest => {
   return {
-    username: createUserRequest.username,
-    email: createUserRequest.email,
-    password: createUserRequest.password,
-    bio: createUserRequest.bio,
-    profilePhotoUrl: createUserRequest.profilePhotoUrl,
+    username: createUserRequest?.username ?? 'JohnDoe',
+    email: createUserRequest?.email ?? 'john@example.com',
+    password: createUserRequest?.password ?? 'password',
+    bio: createUserRequest?.bio,
+    profilePhotoUrl: createUserRequest?.profilePhotoUrl,
   }
 }
 
@@ -49,12 +43,31 @@ describe('CreateUserUseCase', () => {
     const createUserRequest = makeCreateUserRequest()
     const { user } = await sut.execute(createUserRequest)
 
-    expect(user.id).toBeTruthy()
-    expect(user.username).toBe('JohnDoe')
-    expect(user.email).toBe('john@example.com')
-    expect(user.status).toBe('pending')
+    expect(user.id.value).toBeTruthy()
     expect(user.createdAt).toBeTruthy()
     expect(user.updatedAt).toBeTruthy()
+    expect(user).contain({
+      username: 'JohnDoe',
+      email: 'john@example.com',
+      status: 'pending',
+    })
+  })
+
+  it('should create user with optional fields', async () => {
+    const { user } = await sut.execute(
+      makeCreateUserRequest({
+        username: 'JohnDoe',
+        email: 'john@example.com',
+        password: 'password',
+        profilePhotoUrl: 'photo.jpg',
+        bio: 'My bio',
+      })
+    )
+
+    expect(user).contain({
+      profilePhotoUrl: 'photo.jpg',
+      bio: 'My bio',
+    })
   })
 
   it('should save user in repository', async () => {
@@ -74,21 +87,6 @@ describe('CreateUserUseCase', () => {
 
     expect(user.passwordHash).toBe(`hashed_${createUserRequest.password}`)
     expect(hashSpy).toHaveBeenCalledWith('password')
-  })
-
-  it('should create user with optional fields', async () => {
-    const { user } = await sut.execute(
-      makeCreateUserRequest({
-        username: 'JohnDoe',
-        email: 'john@example.com',
-        password: 'password',
-        profilePhotoUrl: 'photo.jpg',
-        bio: 'My bio',
-      })
-    )
-
-    expect(user.profilePhotoUrl).toBe('photo.jpg')
-    expect(user.bio).toBe('My bio')
   })
 
   it('should not allow duplicated username', async () => {

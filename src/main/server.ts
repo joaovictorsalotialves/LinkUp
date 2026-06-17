@@ -1,4 +1,4 @@
-import { env } from '@/infra/config/env'
+import { env } from '@/core/config/env'
 import app from './app'
 
 app.listen(env.SERVER_PORT, () => {

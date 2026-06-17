@@ -17,7 +17,7 @@ describe('EmailMustBeUniquePolicy', () => {
   })
 
   it('should throw ResourceAlreadyExists when email already exists', async () => {
-    await inMemoryUsersRepository.save(makeUser())
+    await inMemoryUsersRepository.create(makeUser())
 
     await expect(sut.validate('john@example.com')).rejects.toBeInstanceOf(ResourceAlreadyExists)
   })

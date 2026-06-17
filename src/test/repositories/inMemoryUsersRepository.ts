@@ -4,7 +4,7 @@ import type { User } from '@/domain/user/enterprise/entities/User'
 export class InMemoryUsersRepository implements UserRepository {
   public items: User[] = []
 
-  async save(user: User): Promise<void> {
+  async create(user: User): Promise<void> {
     this.items.push(user)
   }
 
