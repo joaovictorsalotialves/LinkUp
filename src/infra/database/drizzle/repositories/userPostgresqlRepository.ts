@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm/pg-core/expressions'
 import type { UserRepository } from '@/domain/user/application/repositories/UserRepository'
 import { User } from '@/domain/user/enterprise/entities/User'
 import { db } from '../client'
+import { userMapper } from '../mapper/userMapper'
 import { schemas } from '../schemas'
 
 export class UserPostgresqlRepository implements UserRepository {
@@ -19,6 +20,16 @@ export class UserPostgresqlRepository implements UserRepository {
     })
   }
 
+  async findById(id: string): Promise<User | null> {
+    const [user] = await db.select().from(schemas.users).where(eq(schemas.users.id, id))
+
+    if (!user) {
+      return null
+    }
+
+    return User.create(userMapper(user))
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     const [user] = await db.select().from(schemas.users).where(eq(schemas.users.email, email))
 
@@ -26,16 +37,7 @@ export class UserPostgresqlRepository implements UserRepository {
       return null
     }
 
-    return User.create({
-      username: user.username,
-      email: user.email,
-      passwordHash: user.passwordHash,
-      profilePhotoUrl: user.profilePhotoUrl ?? undefined,
-      bio: user.bio ?? undefined,
-      status: user.status,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    })
+    return User.create(userMapper(user))
   }
 
   async findByUsername(username: string): Promise<User | null> {
@@ -45,15 +47,6 @@ export class UserPostgresqlRepository implements UserRepository {
       return null
     }
 
-    return User.create({
-      username: user.username,
-      email: user.email,
-      passwordHash: user.passwordHash,
-      profilePhotoUrl: user.profilePhotoUrl ?? undefined,
-      bio: user.bio ?? undefined,
-      status: user.status,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    })
+    return User.create(userMapper(user))
   }
 }
