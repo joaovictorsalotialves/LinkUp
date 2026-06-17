@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express'
 import z from 'zod'
-import { ServerError } from '@/core/errors/ServerError'
 import type { CreateUserUseCase } from '@/domain/user/application/use-cases/createUserUseCase'
+import { throwError } from '../../throwError'
 
 const createUserBodySchema = z.object({
   username: z.string(),
@@ -26,10 +26,8 @@ export class CreateUserController {
       })
 
       return response.status(201).send()
-      // biome-ignore lint/suspicious/noExplicitAny: Error
-    } catch (error: any) {
-      console.error('Error creating user:', error)
-      throw new ServerError(error)
+    } catch (error) {
+      throwError(response, error as Error)
     }
   }
 }

@@ -1,5 +1,3 @@
-import { InternalServerError } from '@/core/errors/InternalServerError'
-import { ResourceAlreadyExists } from '@/core/errors/ResourceAlreadyExists'
 import type { HashProvider } from '@/core/provider/HashProvider'
 import { User } from '../../enterprise/entities/User'
 import type { EmailMustBeUniquePolicy } from '../policy/EmailMustBeUniquePolicy'
@@ -27,22 +25,14 @@ export class CreateUserUseCase {
   ) {}
 
   async execute({ username, email, password, profilePhotoUrl, bio }: CreateUserRequest): Promise<CreateUserResponse> {
-    try {
-      await this.usernameMustBeUniquePolicy.validate(username)
-      await this.emailMustBeUniquePolicy.validate(email)
+    await this.usernameMustBeUniquePolicy.validate(username)
+    await this.emailMustBeUniquePolicy.validate(email)
 
-      const passwordHash = await this.hashProvider.hash(password)
+    const passwordHash = await this.hashProvider.hash(password)
 
-      const user = User.create({ username, email, passwordHash, profilePhotoUrl, bio })
-      await this.userRepository.create(user)
+    const user = User.create({ username, email, passwordHash, profilePhotoUrl, bio })
+    await this.userRepository.create(user)
 
-      return { user }
-    } catch (error) {
-      if (error instanceof ResourceAlreadyExists) {
-        throw error
-      }
-
-      throw new InternalServerError('Failed to create user')
-    }
+    return { user }
   }
 }
